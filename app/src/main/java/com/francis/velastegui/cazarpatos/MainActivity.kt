@@ -182,9 +182,13 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_salir -> {
-                finish()
+                // Cerrar sesión en Firebase Auth
+                com.google.firebase.auth.FirebaseAuth.getInstance().signOut()
+                // Cierra todas las actividades abiertas y vuelve a la pantalla principal
+                finishAffinity()
                 true
             }
+
             //**********ELIMINAR**************
             R.id.action_eliminar_puntaje -> {
                 eliminarPuntajeDelUsuarioActual()

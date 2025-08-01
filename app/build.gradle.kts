@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.security.crypto)
     implementation(libs.firebase.firestore)
     implementation(libs.google.firebase.firestore.ktx)
+    implementation(libs.firebase.auth)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

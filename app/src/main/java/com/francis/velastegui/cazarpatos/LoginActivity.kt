@@ -17,126 +17,130 @@ import com.google.firebase.ktx.Firebase
 class LoginActivity : AppCompatActivity() {
     lateinit var manejadorArchivo: FileHandler
     lateinit var editTextEmail: EditText
-    lateinit var editTextPassword:EditText
+    lateinit var editTextPassword: EditText
     lateinit var buttonLogin: Button
-    lateinit var buttonNewUser:Button
+    lateinit var buttonNewUser: Button
     lateinit var checkBoxRecordarme: CheckBox
     lateinit var mediaPlayer: MediaPlayer
     private lateinit var auth: FirebaseAuth
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_login)
-        /*ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }*/
-        //Inicialización de variables
+
+        // Inicialización de variables
         manejadorArchivo = FileExternalManager(this)
         editTextEmail = findViewById(R.id.editTextEmail)
         editTextPassword = findViewById(R.id.editTextPassword)
         buttonLogin = findViewById(R.id.buttonLogin)
         buttonNewUser = findViewById(R.id.buttonNewUser)
         checkBoxRecordarme = findViewById(R.id.checkBoxRecordarme)
-        // Initialize Firebase Auth
+
+        // Inicializar Firebase Auth
         auth = Firebase.auth
+
+        // Leer preferencias guardadas
         LeerDatosDePreferencias()
 
-
-        //Eventos clic
+        // Evento botón Login
         buttonLogin.setOnClickListener {
             val email = editTextEmail.text.toString()
             val clave = editTextPassword.text.toString()
-            //Validaciones de datos requeridos y formatos
-            if(!validateRequiredData())
+
+            if (!validateRequiredData())
                 return@setOnClickListener
-            //Guardar datos en preferencias.
+
             GuardarDatosEnPreferencias()
-            //Si pasa validación de datos requeridos, ir a pantalla principal
-            //val intent = Intent(this, MainActivity::class.java)
-            //intent.putExtra(EXTRA_LOGIN, email)
-            //startActivity(intent)
-            //finish()
             AutenticarUsuario(email, clave)
         }
-        buttonNewUser.setOnClickListener{
 
+        //Ir a pantalla de registro
+        buttonNewUser.setOnClickListener {
+            val intent = Intent(this, RegisterActivity::class.java)
+            startActivity(intent)
         }
-        mediaPlayer=MediaPlayer.create(this, R.raw.title_screen)
+
+        // Reproducir música
+        mediaPlayer = MediaPlayer.create(this, R.raw.title_screen)
         mediaPlayer.start()
     }
 
-    fun AutenticarUsuario(email:String, password:String){
+    private fun AutenticarUsuario(email: String, password: String) {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     Log.d(EXTRA_LOGIN, "signInWithEmail:success")
-                    //Si pasa validación de datos requeridos, ir a pantalla principal
                     val intencion = Intent(this, MainActivity::class.java)
                     intencion.putExtra(EXTRA_LOGIN, auth.currentUser!!.email)
                     startActivity(intencion)
-                    //finish()
                 } else {
                     Log.w(EXTRA_LOGIN, "signInWithEmail:failure", task.exception)
-                    Toast.makeText(baseContext, task.exception!!.message,
-                        Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        baseContext, task.exception!!.message,
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
     }
 
-
-    private fun LeerDatosDePreferencias(){
-
+    private fun LeerDatosDePreferencias() {
         val listadoLeido = manejadorArchivo.ReadInformation()
-        if(listadoLeido.first != null){
+        if (listadoLeido.first != null) {
             checkBoxRecordarme.isChecked = true
         }
-        editTextEmail.setText ( listadoLeido.first )
-        editTextPassword.setText ( listadoLeido.second )
+        editTextEmail.setText(listadoLeido.first)
+        editTextPassword.setText(listadoLeido.second)
     }
 
-
-
-    private fun GuardarDatosEnPreferencias(){
+    private fun GuardarDatosEnPreferencias() {
         val email = editTextEmail.text.toString()
         val clave = editTextPassword.text.toString()
-        val listadoAGrabar:Pair<String,String>
-        if(checkBoxRecordarme.isChecked){
-            listadoAGrabar = email to clave
-        }
-        else{
-            listadoAGrabar ="" to ""
+        val listadoAGrabar: Pair<String, String> = if (checkBoxRecordarme.isChecked) {
+            email to clave
+        } else {
+            "" to ""
         }
         manejadorArchivo.SaveInformation(listadoAGrabar)
     }
 
-
-
-
-
-    private fun validateRequiredData():Boolean{
+    private fun validateRequiredData(): Boolean {
         val email = editTextEmail.text.toString()
         val password = editTextPassword.text.toString()
         if (email.isEmpty()) {
-            editTextEmail.setError(getString(R.string.error_email_required))
+            editTextEmail.error = getString(R.string.error_email_required)
             editTextEmail.requestFocus()
             return false
         }
         if (password.isEmpty()) {
-            editTextPassword.setError(getString(R.string.error_password_required))
+            editTextPassword.error = getString(R.string.error_password_required)
             editTextPassword.requestFocus()
             return false
         }
         if (password.length < 3) {
-            editTextPassword.setError(getString(R.string.error_password_min_length))
+            editTextPassword.error = getString(R.string.error_password_min_length)
             editTextPassword.requestFocus()
             return false
         }
         return true
     }
+
     override fun onDestroy() {
         mediaPlayer.release()
         super.onDestroy()
     }
+
+    override fun onStart() {
+        super.onStart()
+
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            // El usuario ya está autenticado
+            val intent = Intent(this, MainActivity::class.java)
+            intent.putExtra(EXTRA_LOGIN, currentUser.email)
+            startActivity(intent)
+            finish()
+        }
+    }
+
 }
